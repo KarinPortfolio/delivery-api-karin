@@ -1,14 +1,11 @@
+
 package com.deliverytech.delivery.entity;
 
-import java.util.List;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
+import jakarta.persistence.*;
 import lombok.Data;
+
+import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @Data
@@ -17,9 +14,30 @@ public class Restaurante {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     private String nome;
+    @Column(name = "CNPJ")
     private String cnpj;
+    private String categoria;
     private String endereco;
+    private String telefone;
 
-    @OneToMany(mappedBy = "restaurante", cascade = CascadeType.ALL)
-    private List<Produto> cardapio;
+    @Column(name = "TAXA_ENTREGA")
+    private BigDecimal taxaEntrega;
+    private boolean ativo;
+
+    @OneToMany(mappedBy = "restaurante")
+    private List<Produto> produtos;
+
+    @OneToMany(mappedBy = "restaurante")
+    private List<Pedido> pedidos;
+
+    @Column(name = "AVALIACAO")
+    private BigDecimal avaliacao;
+
+    public BigDecimal getAvaliacao() {
+        return avaliacao;
+    }
+
+    public void setAvaliacao(BigDecimal avaliacao) {
+        this.avaliacao = avaliacao;
+    }
 }
