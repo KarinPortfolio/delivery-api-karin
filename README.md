@@ -225,6 +225,7 @@ delivery-api
 │ spring-boot.png
 │
 └───AtividadePratica02
+  API documentation.postman_collection.json
 ```
 
 API documentation.postman_collection.json
