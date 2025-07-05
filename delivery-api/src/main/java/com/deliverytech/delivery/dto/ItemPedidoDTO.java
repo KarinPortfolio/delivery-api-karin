@@ -1,22 +1,23 @@
 package com.deliverytech.delivery.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import lombok.Data;
 import java.math.BigDecimal;
-
-import lombok.Data; 
-import jakarta.validation.constraints.Min; 
-import jakarta.validation.constraints.NotNull; 
-
-@Data 
+@Data
 public class ItemPedidoDTO {
+    @NotNull(message = "O ID do produto é obrigatório")
+    private Long produtoId;
 
-    @NotNull(message = "O ID do produto não pode ser nulo")
-    private Long produtoId; // ID do produto que está sendo pedido
+    @NotNull(message = "A quantidade é obrigatória")
+    @Min(value = 1, message = "A quantidade deve ser no mínimo 1")
+    private Integer quantidade;
 
-    @Min(value = 1, message = "A quantidade deve ser de pelo menos 1")
-    private Integer quantidade; // Quantidade deste produto no pedido
-    private String nomeProduto; 
-    private BigDecimal precoUnitario; 
-    private BigDecimal subtotal; 
+    @NotNull(message = "O preço unitário é obrigatório")
+    @Min(value = 0, message = "O preço unitário deve ser no mínimo 0")
+    private BigDecimal precoUnitario;
 
-    
+    public BigDecimal getSubtotal() {
+        return this.precoUnitario.multiply(new BigDecimal(this.quantidade));
+    }
 }

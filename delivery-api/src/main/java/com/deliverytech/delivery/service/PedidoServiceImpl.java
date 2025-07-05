@@ -1,4 +1,4 @@
-package com.deliverytech.delivery.service; 
+package com.deliverytech.delivery.service;
 
 import com.deliverytech.delivery.entity.Cliente;
 import com.deliverytech.delivery.entity.ItemPedido;
@@ -12,15 +12,19 @@ import com.deliverytech.delivery.repository.ProdutoRepository;
 import com.deliverytech.delivery.repository.RestauranteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; 
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.time.LocalDate; 
-import java.time.LocalTime; 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.UUID; 
+import java.util.UUID;
+
+// Certifique-se de importar corretamente o DTO
+import com.deliverytech.delivery.dto.ItemPedidoDTO;
 
 @Service
 public class PedidoServiceImpl implements PedidoService {
@@ -29,13 +33,13 @@ public class PedidoServiceImpl implements PedidoService {
     private PedidoRepository pedidoRepository;
 
     @Autowired
-    private ClienteRepository clienteRepository; 
+    private ClienteRepository clienteRepository;
 
     @Autowired
-    private RestauranteRepository restauranteRepository; 
+    private RestauranteRepository restauranteRepository;
 
     @Autowired
-    private ProdutoRepository produtoRepository; 
+    private ProdutoRepository produtoRepository;
 
     @Override
     @Transactional
@@ -49,12 +53,52 @@ public class PedidoServiceImpl implements PedidoService {
         pedido.setCliente(cliente);
         pedido.setRestaurante(restaurante);
         pedido.setDataPedido(LocalDateTime.now());
-        pedido.setStatus(StatusPedido.PENDENTE); 
+        pedido.setStatus(StatusPedido.PENDENTE);
         pedido.setSubtotal(BigDecimal.ZERO);
-        pedido.setTaxaEntrega(new BigDecimal("5.00")); 
+        pedido.setTaxaEntrega(new BigDecimal("5.00"));
         pedido.setValorTotal(pedido.getTaxaEntrega());
         pedido.setNumeroPedido(UUID.randomUUID().toString().substring(0, 8).toUpperCase()); // Gera um número de pedido simples
+        pedido.setItens(new ArrayList<>()); // Inicializa a lista de itens
 
+        recalcularValoresPedido(pedido); // Recalcula valores após adicionar todos os itens
+        return pedidoRepository.save(pedido);
+    }
+
+    @Override
+    @Transactional
+    public Pedido criarPedidoComItens(Long clienteId, Long restauranteId, String enderecoEntrega, java.util.List<ItemPedidoDTO> itensDTO) {
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new IllegalArgumentException("Cliente não encontrado com ID: " + clienteId));
+        Restaurante restaurante = restauranteRepository.findById(restauranteId)
+                .orElseThrow(() -> new IllegalArgumentException("Restaurante não encontrado com ID: " + restauranteId));
+
+        Pedido pedido = new Pedido();
+        pedido.setCliente(cliente);
+        pedido.setRestaurante(restaurante);
+        pedido.setDataPedido(LocalDateTime.now());
+        pedido.setStatus(StatusPedido.PENDENTE);
+        pedido.setEnderecoEntrega(enderecoEntrega);
+        pedido.setSubtotal(BigDecimal.ZERO);
+        pedido.setTaxaEntrega(new BigDecimal("5.00"));
+        pedido.setNumeroPedido(UUID.randomUUID().toString().substring(0, 8).toUpperCase());
+
+        List<ItemPedido> itens = new ArrayList<>();
+        for (ItemPedidoDTO itemDTO : itensDTO) {
+            Produto produto = produtoRepository.findById(itemDTO.getProdutoId())
+                    .orElseThrow(() -> new IllegalArgumentException("Produto não encontrado com ID: " + itemDTO.getProdutoId()));
+            if (itemDTO.getQuantidade() <= 0) {
+                throw new IllegalArgumentException("A quantidade do item " + produto.getNome() + " deve ser maior que zero.");
+            }
+            ItemPedido itemPedido = new ItemPedido();
+            itemPedido.setPedido(pedido);
+            itemPedido.setProduto(produto);
+            itemPedido.setQuantidade(itemDTO.getQuantidade());
+            itemPedido.setPrecoUnitario(produto.getPreco());
+            itens.add(itemPedido);
+        }
+        pedido.setItens(itens);
+
+        recalcularValoresPedido(pedido); // Recalcula valores após adicionar todos os itens
         return pedidoRepository.save(pedido);
     }
 
@@ -75,21 +119,19 @@ public class PedidoServiceImpl implements PedidoService {
                 .findFirst();
 
         if (itemExistente.isPresent()) {
-            // Se o item já existe, apenas atualiza a quantidade
             ItemPedido item = itemExistente.get();
             item.setQuantidade(item.getQuantidade() + quantidade);
-            item.setPrecoUnitario(produto.getPreco()); 
-    
+            item.setPrecoUnitario(produto.getPreco());
+
         } else {
             ItemPedido itemPedido = new ItemPedido();
             itemPedido.setPedido(pedido);
             itemPedido.setProduto(produto);
             itemPedido.setQuantidade(quantidade);
             itemPedido.setPrecoUnitario(produto.getPreco());
-            pedido.adicionarItem(itemPedido); // Usa o método que você já tem na entidade Pedido
+            pedido.adicionarItem(itemPedido);
         }
 
-        // Recalcular subtotal e valor total
         recalcularValoresPedido(pedido);
 
         return pedidoRepository.save(pedido);
@@ -97,7 +139,7 @@ public class PedidoServiceImpl implements PedidoService {
 
     private void recalcularValoresPedido(Pedido pedido) {
         BigDecimal subtotal = pedido.getItens().stream()
-                .map(ItemPedido::getPrecoTotal)
+                .map(item -> item.getProduto().getPreco().multiply(new BigDecimal(item.getQuantidade())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         pedido.setSubtotal(subtotal);
@@ -113,7 +155,7 @@ public class PedidoServiceImpl implements PedidoService {
         if (pedido.getStatus() != StatusPedido.PENDENTE) {
             throw new IllegalArgumentException("Pedido não pode ser confirmado pois não está no status PENDENTE.");
         }
-        pedido.confirmar(); // Usa o método que você já tem na entidade Pedido
+        pedido.confirmar();
         return pedidoRepository.save(pedido);
     }
 
@@ -140,7 +182,7 @@ public class PedidoServiceImpl implements PedidoService {
         Pedido pedido = pedidoRepository.findById(pedidoId)
                 .orElseThrow(() -> new IllegalArgumentException("Pedido não encontrado com ID: " + pedidoId));
         pedido.setStatus(status);
-       
+
         return pedidoRepository.save(pedido);
     }
 

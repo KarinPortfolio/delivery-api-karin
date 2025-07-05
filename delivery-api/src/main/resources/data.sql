@@ -34,3 +34,5 @@ INSERT INTO pedido (data_pedido, status, subtotal, taxa_entrega, valor_total, cl
 INSERT INTO item_pedido (pedido_id, produto_id, quantidade, preco_unitario) VALUES
 (1, 1, 1, 45.00),
 (1, 2, 1, 50.00);
+
+ALTER TABLE item_pedido ALTER COLUMN pedido_id SET NULL;

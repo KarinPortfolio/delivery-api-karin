@@ -1,7 +1,15 @@
 package com.deliverytech.delivery.entity;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
+
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class ItemPedido {
@@ -11,10 +19,12 @@ public class ItemPedido {
 
     @ManyToOne
     @JoinColumn(name = "produto_id")
+    @JsonIgnore
     private Produto produto;
 
     @ManyToOne
     @JoinColumn(name = "pedido_id")
+    @JsonIgnore
     private Pedido pedido;
 
     private Integer quantidade;
@@ -69,5 +79,4 @@ public BigDecimal getPrecoTotal() {
     }
     return precoUnitario.multiply(BigDecimal.valueOf(quantidade));
 }
-
 }

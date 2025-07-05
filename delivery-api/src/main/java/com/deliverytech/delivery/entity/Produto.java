@@ -1,8 +1,17 @@
 package com.deliverytech.delivery.entity;
 
-import jakarta.persistence.*;
 import java.math.BigDecimal;
-import java.util.Set; // or List, depending on your needs
+import java.util.Set;
+
+import com.fasterxml.jackson.annotation.JsonIgnore; // or List, depending on your needs
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 
 @Entity
 public class Produto {
@@ -16,11 +25,13 @@ public class Produto {
     private Boolean ativo;
 
        @OneToMany(mappedBy = "produto") 
+       @JsonIgnore
     private Set<ItemPedido> itensPedido; 
 
   
     @ManyToOne
     @JoinColumn(name = "restaurante_id")
+    @JsonIgnore
     private Restaurante restaurante;
 
 
