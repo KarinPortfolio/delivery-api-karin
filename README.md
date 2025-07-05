@@ -8,10 +8,11 @@ Sistema de delivery desenvolvido com Spring Boot e Java 21.
 
 # Estrutura
 
+```
 delivery-api
 │ .gitignore
 │ README.md
-│  
+│
 ├───delivery-api
 │ │ .gitattributes
 │ │ .gitignore
@@ -224,6 +225,8 @@ delivery-api
 │ spring-boot.png
 │
 └───AtividadePratica02
+```
+
 API documentation.postman_collection.json
 
 ## 🚀 Tecnologias
